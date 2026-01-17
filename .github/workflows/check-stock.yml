@@ -4,8 +4,7 @@ on:
   schedule:
     # Runs at 10 AM UTC daily (adjust as needed)
     - cron: '0 10 * * *'
-  # Allows you to run manually from GitHub UI
-  workflow_dispatch:
+  workflow_dispatch:  # Allows manual run
 
 jobs:
   check-stock:
@@ -26,26 +25,4 @@ jobs:
         pip install requests beautifulsoup4
         
     - name: Run stock check
-      id: check
       run: python check_bag.py
-      
-    - name: Send email on stock change
-      if: success() && steps.check.outcome == 'success'
-      uses: dawidd6/action-send-mail@v3
-      with:
-        # GitHub will send email to the account's email
-        server_address: smtp.gmail.com
-        server_port: 465
-        username: ${{ secrets.MAIL_USERNAME }}
-        password: ${{ secrets.MAIL_PASSWORD }}
-        subject: 'Bag Stock Check Result'
-        body: |
-          Bag stock check completed at ${{ steps.check.outputs.time }}
-          
-          Status: ${{ steps.check.outputs.status }}
-          
-          Check the workflow run for details: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          
-          Direct link: https://bash.com/ff-mini-bucket-bag-sage-green-000003aclz9/p?skuId=2825852
-        to: ${{ secrets.NOTIFICATION_EMAIL }}
-        from: GitHub Actions

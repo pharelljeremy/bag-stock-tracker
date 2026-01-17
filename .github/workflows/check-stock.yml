@@ -1,8 +1,9 @@
 name: Bag Stock Alert
 on:
   schedule:
-    - cron: '0 10 * * *'  # Daily at 10 AM UTC
-  workflow_dispatch:      # Allows manual run
+    # Every 2 hours: at 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 hours
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
 
 jobs:
   check:

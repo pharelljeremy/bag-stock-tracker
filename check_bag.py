@@ -29,21 +29,18 @@ try:
     
     is_available = True  # Assume available until proven otherwise
     
-    # Check button text
-    for button in buttons:
-        button_text = button.get_text().lower()
-        print(f"🔍 Found button text: '{button_text}'")
-        if 'unavailable' in button_text:
-            is_available = False
-            print("✅ Confirmed: 'unavailable' found in button")
-            break
-    
-    # Backup: Check entire page
-    if is_available and 'unavailable' in soup.get_text().lower():
-        print("✅ Confirmed: 'unavailable' found in page text")
+# Around line 32-35, CHANGE THIS:
+    if 'unavailable' in button_text:
         is_available = False
-    
-    print("-" * 60)
+        print("✅ Confirmed: 'unavailable' found in button")
+        break
+
+    # TO THIS (for testing):
+    if False:  # if 'unavailable' in button_text:
+        is_available = False
+        print("✅ Confirmed: 'unavailable' found in button")
+        break    
+        print("-" * 60)
     
     if is_available:
         print("🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉")

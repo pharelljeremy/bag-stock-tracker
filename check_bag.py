@@ -1,70 +1,37 @@
-import requests
+import requests, sys
 from bs4 import BeautifulSoup
 from datetime import datetime
-import sys
 
 URL = "https://bash.com/ff-mini-bucket-bag-sage-green-000003aclz9/p?skuId=2825852"
 
-print("=" * 60)
-print("👜 BASH BAG STOCK CHECKER - ALERT SYSTEM")
-print("=" * 60)
-print(f"⏰ Check time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-print(f"🔗 URL: {URL}")
-print("-" * 60)
+print("="*50)
+print("👜 STOCK CHECK")
+print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+print(URL)
+print("="*50)
 
 try:
-    # Fetch page
-    response = requests.get(
-        URL, 
-        headers={'User-Agent': 'Mozilla/5.0'},
-        timeout=10
-    )
-    response.raise_for_status()
-    
-    # Parse HTML
-    soup = BeautifulSoup(response.text, 'html.parser')
-    
-    # Look for "Unavailable" in button text
-    buttons = soup.find_all('span', class_=lambda c: c and 'buttonText' in c)
-    
-    is_available = True  # Assume available until proven otherwise
-    
-    # Check button text
-    for button in buttons:
-        button_text = button.get_text().lower()
-        print(f"🔍 Found button text: '{button_text}'")
-        if 'unavailable' in button_text:
-            is_available = False
-            print("✅ Confirmed: 'unavailable' found in button")
-            break
-    
-    # Backup: Check entire page
-    if is_available and 'unavailable' in soup.get_text().lower():
-        print("✅ Confirmed: 'unavailable' found in page text")
-        is_available = False
-    
-    print("-" * 60)
-    
-    if is_available:
-        print("🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉")
-        print("🚨🚨🚨 BAG MIGHT BE AVAILABLE! 🚨🚨🚨")
-        print("🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉")
-        print("")
-        print("📍 CHECK IMMEDIATELY:")
-        print(f"🔗 {URL}")
-        print("")
-        print("⏰ Time is critical - bags sell out fast!")
-        print("=" * 60)
-        sys.exit(1)  # ⭐ FAIL - triggers "FAILED" email alert
+    r = requests.get(URL, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+    r.raise_for_status()
+
+    soup = BeautifulSoup(r.text, "html.parser")
+    btn = soup.find("button", id="addToCartBtn")
+
+    if not btn:
+        print("🚨 Add-to-cart button missing")
+        sys.exit(1)
+
+    text = btn.get_text(strip=True)
+    print(f"🔍 Button text: '{text}'")
+
+    if text.lower() != "add to cart":
+        print("🚨🚨 STATUS CHANGED — POSSIBLE STOCK CHANGE 🚨🚨")
+        sys.exit(1)   # FAIL → email
     else:
-        print("❌ STATUS: Still unavailable")
-        print("✅ System working - no alert needed")
-        print("⏰ Next automatic check: Tomorrow")
-        print("=" * 60)
-        sys.exit(0)  # ⭐ SUCCEED - no email
-        
+        print("✅ Still normal (Add to cart)")
+        sys.exit(0)   # OK → no email
+
 except Exception as e:
-    print(f"⚠️ ERROR: {e}")
-    print("System will try again tomorrow")
-    print("=" * 60)
-    sys.exit(0)  # Succeed on error (no alert email)
+    print("⚠️ Error:", e)
+    sys.exit(0)       # Don't spam on errors
+

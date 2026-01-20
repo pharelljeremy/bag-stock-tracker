@@ -12,15 +12,20 @@ print("="*50)
 
 try:
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto(URL, timeout=15000)
-        btn = page.query_selector("#addToCartBtn")
         
+        # Wait up to 10s for the button to appear
+        try:
+            btn = page.wait_for_selector("#addToCartBtn", timeout=10000)
+        except:
+            btn = None
+
         if not btn:
-            print("🚨 Add-to-cart button missing")
+            print("🚨 Add-to-cart button missing (or not loaded yet)")
             sys.exit(1)
-        
+
         text = btn.inner_text().strip()
         print(f"🔍 Button text: '{text}'")
 

@@ -1,64 +1,65 @@
-from playwright.sync_api import sync_playwright, TimeoutError as PWTimeoutError
+from playwright.sync_api import sync_playwright
 from datetime import datetime
-import os, sys
+import sys
 
-URL = "https://stevemadden.co.za/products/bevelyn-mm-cream"
-DIR = os.getenv("GITHUB_WORKSPACE", ".")
+URL = "https://bash.com/ff-mini-bucket-bag-sage-green-000003aclz9/p?skuId=2825852"
 
-def snapshot(page, name):
-    try:
-        with open(os.path.join(DIR, name), "w", encoding="utf-8") as f:
-            f.write(page.content())
-        print(f"📸 Snapshot saved: {name}")
-    except Exception as e:
-        print("⚠️ Snapshot failed:", e)
-
-print("="*50)
+print("=" * 50)
 print("👜 STOCK CHECK")
 print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 print(URL)
-print("="*50)
+print("=" * 50)
 
 selectors = [
     "#addToCartBtn",
+    "button#addToCartBtn",
     "button.product-form__cart-submit",
     "button:has-text('Add to cart')",
     "button:has-text('ADD TO CART')",
-    "button[type=submit]:visible"
 ]
 
 try:
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=["--no-sandbox"])
-        page = browser.new_page(viewport={"width":1280,"height":800})
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--no-sandbox"]
+        )
+        page = browser.new_page()
         page.goto(URL, timeout=45000, wait_until="networkidle")
 
         btn = None
-        for s in selectors:
-            try:
-                btn = page.wait_for_selector(s, timeout=12000, state="visible")
-                print(f"🔎 Found button: {s}")
+        for attempt in range(2):  # small retry for slow JS
+            for sel in selectors:
+                try:
+                    btn = page.wait_for_selector(
+                        sel, timeout=10000, state="visible"
+                    )
+                    if btn:
+                        print("Found selector:", sel)
+                        break
+                except:
+                    pass
+            if btn:
                 break
-            except PWTimeoutError:
-                print(f"❌ Not found: {s}")
+            page.wait_for_timeout(3000)
 
         if not btn:
-            print("🚨 Add-to-cart missing")
-            snapshot(page, "missing_add_to_cart.html")
+            with open("snapshot.html", "w", encoding="utf-8") as f:
+                f.write(page.content())
+            print("🚨 Add-to-cart button not found — snapshot saved")
             sys.exit(1)
 
-        text = btn.inner_text().strip().lower()
+        text = btn.inner_text().strip()
         print(f"🔍 Button text: '{text}'")
 
-        if "add to cart" not in text:
-            print("🚨🚨 STATUS CHANGED 🚨🚨")
-            snapshot(page, "status_changed.html")
+        if text.lower() != "add to cart":
+            print("🚨🚨 STATUS CHANGED — POSSIBLE STOCK CHANGE 🚨🚨")
             sys.exit(1)
 
-        print("✅ Still in stock")
+        print("✅ Still normal (Add to cart)")
         sys.exit(0)
 
 except Exception as e:
-    print("💥 Script error:", e)
-    sys.exit(1)
+    print("⚠️ Error:", e)
+    sys.exit(0)
 

@@ -1,6 +1,6 @@
-import requests, sys
-from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 from datetime import datetime
+import sys
 
 URL = "https://bash.com/ff-mini-bucket-bag-sage-green-000003aclz9/p?skuId=2825852"
 
@@ -11,27 +11,27 @@ print(URL)
 print("="*50)
 
 try:
-    r = requests.get(URL, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-    r.raise_for_status()
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        page.goto(URL, timeout=15000)
+        btn = page.query_selector("#addToCartBtn")
+        
+        if not btn:
+            print("🚨 Add-to-cart button missing")
+            sys.exit(1)
+        
+        text = btn.inner_text().strip()
+        print(f"🔍 Button text: '{text}'")
 
-    soup = BeautifulSoup(r.text, "html.parser")
-    btn = soup.find("button", id="addToCartBtn")
-
-    if not btn:
-        print("🚨 Add-to-cart button missing")
-        sys.exit(1)
-
-    text = btn.get_text(strip=True)
-    print(f"🔍 Button text: '{text}'")
-
-    if text.lower() != "add to cart":
-        print("🚨🚨 STATUS CHANGED — POSSIBLE STOCK CHANGE 🚨🚨")
-        sys.exit(1)   # FAIL → email
-    else:
-        print("✅ Still normal (Add to cart)")
-        sys.exit(0)   # OK → no email
+        if text.lower() != "add to cart":
+            print("🚨🚨 STATUS CHANGED — POSSIBLE STOCK CHANGE 🚨🚨")
+            sys.exit(1)
+        else:
+            print("✅ Still normal (Add to cart)")
+            sys.exit(0)
 
 except Exception as e:
     print("⚠️ Error:", e)
-    sys.exit(0)       # Don't spam on errors
+    sys.exit(0)
 

@@ -18,6 +18,30 @@ selectors = [
     "button:has-text('ADD TO CART')",
 ]
 
+def find_button(page):
+    # check main page
+    for sel in selectors:
+        try:
+            btn = page.wait_for_selector(sel, timeout=5000, state="visible")
+            if btn:
+                print("Found on main page:", sel)
+                return btn
+        except:
+            pass
+
+    # check iframes
+    for frame in page.frames:
+        for sel in selectors:
+            try:
+                btn = frame.wait_for_selector(sel, timeout=5000, state="visible")
+                if btn:
+                    print("Found in iframe:", sel)
+                    return btn
+            except:
+                pass
+
+    return None
+
 try:
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -27,26 +51,12 @@ try:
         page = browser.new_page()
         page.goto(URL, timeout=45000, wait_until="networkidle")
 
-        btn = None
-        for attempt in range(2):  # small retry for slow JS
-            for sel in selectors:
-                try:
-                    btn = page.wait_for_selector(
-                        sel, timeout=10000, state="visible"
-                    )
-                    if btn:
-                        print("Found selector:", sel)
-                        break
-                except:
-                    pass
-            if btn:
-                break
-            page.wait_for_timeout(3000)
+        btn = find_button(page)
 
         if not btn:
             with open("snapshot.html", "w", encoding="utf-8") as f:
                 f.write(page.content())
-            print("🚨 Add-to-cart button not found — snapshot saved")
+            print("🚨 Add-to-cart button not found (even in iframes)")
             sys.exit(1)
 
         text = btn.inner_text().strip()

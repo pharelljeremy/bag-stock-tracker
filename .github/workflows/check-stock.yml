@@ -1,9 +1,6 @@
 name: Bag Stock Alert
 
-on:
-  schedule:
-    - cron: '0 */2 * * *'
-  workflow_dispatch:
+on: []
 
 jobs:
   check:
